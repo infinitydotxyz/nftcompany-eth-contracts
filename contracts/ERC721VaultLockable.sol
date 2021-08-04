@@ -18,6 +18,8 @@ import {EIP712} from "./utils/EIP712.sol";
 import {ERC1271} from "./utils/ERC1271.sol";
 import {OwnableByERC721} from "./utils/OwnableByERC721.sol";
 
+/// @title ERC721 Vault Lockable
+/// @dev Contract that can hold ETH and ERC721 tokens and lock them. Instances are ownable by an NFT.
 contract ERC721VaultLockable is
     IVaultLockable,
     IERC721VaultLockable,
@@ -33,7 +35,6 @@ contract ERC721VaultLockable is
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
-
 
     /* constant */
 

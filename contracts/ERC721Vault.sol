@@ -15,6 +15,8 @@ import {EIP712} from "./utils/EIP712.sol";
 import {ERC1271} from "./utils/ERC1271.sol";
 import {OwnableByERC721} from "./utils/OwnableByERC721.sol";
 
+/// @title ERC20 Vault
+/// @dev Contract that can hold ETH and ERC721 tokens. Instances are ownable by an NFT.
 contract ERC721Vault is
     IVault,
     IERC721Vault,
@@ -40,12 +42,16 @@ contract ERC721Vault is
 
     /* initialization function */
 
+    /**
+        @dev Should be called by a NFT minting contract as part of the mint function.
+     */
     function initialize() external override initializer {
         OwnableByERC721._setNFT(msg.sender);
     }
 
-    /* ether receive */
-
+    /**
+        @dev Fallback function that allows the contract to receive ETH. 
+     */
     receive() external payable {}
 
     /* internal overrides */
@@ -56,6 +62,14 @@ contract ERC721Vault is
 
     /* overrides */
 
+    /**
+        @dev Function that gets called on receipt of an ERC721 token.
+        @param operator Address of the operator
+        @param from Address of the sender
+        @param tokenId Id of the ERC721
+        @param data Any additional data
+        @return The bytes representing the onERC721Received selector 
+     */
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external override returns (bytes4) {
        emit ERC721Received(operator, from, tokenId, data);
        return IERC721Receiver.onERC721Received.selector;
@@ -63,6 +77,15 @@ contract ERC721Vault is
 
     /* getter functions */
 
+    /** 
+        @dev Calculates permission using EIP712.
+        @param eip712TypeHash EIP712 function signature.
+        @param delegate Beneficiary of the permission.
+        @param token Address of ERC721 contract that minted this token.
+        @param tokenId Id of the ERC721 token.
+        @param nonce Random data to prevent reusing of permission multiple times. Contract nonce could be a good candidate.
+        @return permissionHash Hash of the calculated permission
+    */
     function getPermissionHash(
         bytes32 eip712TypeHash,
         address delegate,
@@ -98,6 +121,12 @@ contract ERC721Vault is
 
     /* user functions */
 
+    /** 
+        @dev Transfer ERC721 tokens out of the vault. Access control: only owner. Token transfer: transfer any ERC721 token.
+        @param token Address of ERC721 contract that minted this token.
+        @param to Address of the recipient.
+        @param tokenId Id of the ERC721 token.
+    */
     function transferERC721(
         address token,
         address to,
@@ -118,6 +147,7 @@ contract ERC721Vault is
         IERC721(token).safeTransferFrom(address(this), to, tokenId);
     }
 
+    /// @dev Transfer ETH out of the vault.
     /// @param to Address of the recipient
     /// @param amount Amount of ETH to transfer
     function transferETH(address to, uint256 amount) external payable override onlyOwner {

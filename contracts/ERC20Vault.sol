@@ -12,6 +12,8 @@ import {EIP712} from "./utils/EIP712.sol";
 import {ERC1271} from "./utils/ERC1271.sol";
 import {OwnableByERC721} from "./utils/OwnableByERC721.sol";
 
+/// @title ERC20 Vault
+/// @dev Contract that can hold ETH and ERC20 tokens. Instances are ownable by an NFT.
 contract ERC20Vault is
     IVault,
     IERC20Vault,
@@ -30,12 +32,16 @@ contract ERC20Vault is
 
     /* initialization function */
 
+    /**
+        @dev Should be called by a NFT minting contract as part of the mint function.
+     */
     function initialize() external override initializer {
         OwnableByERC721._setNFT(msg.sender);
     }
 
-    /* ether receive */
-
+    /**
+        @dev Fallback function that allows the contract to receive ETH. 
+     */
     receive() external payable {}
 
     /* internal overrides */
@@ -46,6 +52,15 @@ contract ERC20Vault is
 
     /* getter functions */
 
+    /** 
+        @dev Calculates permission using EIP712.
+        @param eip712TypeHash EIP712 function signature.
+        @param delegate Beneficiary of the permission.
+        @param token Address of token.
+        @param amount Amount of the token for which permission to spend is being granted.
+        @param nonce Random data to prevent reusing of permission multiple times. Contract nonce could be a good candidate.
+        @return permissionHash Hash of the calculated permission
+    */
     function getPermissionHash(
         bytes32 eip712TypeHash,
         address delegate,
@@ -66,10 +81,12 @@ contract ERC20Vault is
 
     /* user functions */
 
-    /// @dev Transfer ERC20 tokens out of vault. Access control: only owner. Token transfer: transfer any ERC20 token.
-    /// @param token Address of token being transferred.
-    /// @param to Address of the recipient.
-    /// @param amount Amount of tokens to transfer.
+    /** 
+        @dev Transfer ERC20 tokens out of the vault. Access control: only owner. Token transfer: transfer any ERC20 token.
+        @param token Address of token being transferred.
+        @param to Address of the recipient.
+        @param amount Amount of tokens to transfer.
+    */
     function transferERC20(
         address token,
         address to,
@@ -81,6 +98,7 @@ contract ERC20Vault is
         TransferHelper.safeTransfer(token, to, amount);
     }
 
+    /// @dev Transfer ETH out of the vault.
     /// @param to Address of the recipient
     /// @param amount Amount of ETH to transfer
     function transferETH(address to, uint256 amount) external payable override onlyOwner {

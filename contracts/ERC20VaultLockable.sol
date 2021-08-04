@@ -16,6 +16,8 @@ import {EIP712} from "./utils/EIP712.sol";
 import {ERC1271} from "./utils/ERC1271.sol";
 import {OwnableByERC721} from "./utils/OwnableByERC721.sol";
 
+/// @title ERC20 Vault Lockable
+/// @dev Contract that can hold ETH and ERC20 tokens and lock them. Instances are ownable by an NFT.
 contract ERC20VaultLockable is
     IVaultLockable,
     IERC20VaultLockable,
@@ -70,6 +72,12 @@ contract ERC20VaultLockable is
 
     /* pure functions */
 
+    /** 
+        @dev Calculates lockID.
+        @param delegate Delegate that will operate on the contract.
+        @param token Token on which the delegate will operate on.
+        @return lockID The calculated lockID
+    */
     function calculateLockID(address delegate, address token) public pure override returns (bytes32 lockID) {
         return keccak256(abi.encodePacked(delegate, token));
     }
@@ -106,6 +114,11 @@ contract ERC20VaultLockable is
         return _locks[calculateLockID(delegate, token)].balance;
     }
 
+    /** 
+        @dev Fetches the highest balance locked by a delegate for the given token.
+        @param token The locked token
+        @return balance The highest locked balance
+    */
     function getHighestBalanceLocked(address token) public view override returns (uint256 balance) {
         uint256 count = _lockSet.length();
         for (uint256 index; index < count; index++) {
@@ -116,6 +129,10 @@ contract ERC20VaultLockable is
         return balance;
     }
 
+    /** 
+        @dev Sanity check to make sure that locked balance is not greater than the total balance Rarely used.
+        @return validity True or false
+    */
     function verifyERC20Balances() external view override returns (bool validity) {
         // iterate over all token locks and validate sufficient balance
         uint256 count = _lockSet.length();
@@ -172,14 +189,14 @@ contract ERC20VaultLockable is
         emit ERC20Locked(msg.sender, token, amount);
     }
 
-
-    /// @dev Unlock ERC20 tokens in the vault. Access control: called by delegate with signed permission from owner
-    /// State machine: after valid lock from delegate
-    /// State scope: remove or update _locks, increase _nonce
-    /// Token transfer: none
-    /// @param token Address of token being unlocked
-    /// @param amount Amount of tokens being unlocked
-    /// @param permission Permission signature payload
+    /** @dev Unlock ERC20 tokens in the vault. Access control: called by delegate with signed permission from owner
+        State machine: after valid lock from delegate
+        State scope: remove or update _locks, increase _nonce
+        Token transfer: none
+        @param token Address of token being unlocked
+        @param amount Amount of tokens being unlocked
+        @param permission Permission signature payload
+    */
     function unlockERC20(
         address token,
         uint256 amount,
@@ -209,14 +226,16 @@ contract ERC20VaultLockable is
     }
 
 
-    /// @dev Forcibly cancel delegate lock. This function will attempt to notify the delegate of the rage quit using
-    /// a fixed amount of gas. Access control: only owner
-    /// State machine: after valid lock from delegate
-    /// State scope: remove item from _locks
-    /// Token transfer: none
-    /// @param delegate Address of delegate
-    /// @param token Address of token being unlocked
-    
+    /** @dev Forcibly cancel delegate lock. This function will attempt to notify the delegate of the rage quit using
+        a fixed amount of gas. Access control: only owner
+        State machine: after valid lock from delegate
+        State scope: remove item from _locks
+        Token transfer: none
+        @param delegate Address of delegate
+        @param token Address of token being unlocked
+        @return notified Whether delegate contract is notified
+        @return error Error string
+    */
     function rageQuit(address delegate, address token) external override onlyOwner returns (bool notified, string memory error) {
         // get lock id
         bytes32 lockID = calculateLockID(delegate, token);
@@ -269,6 +288,7 @@ contract ERC20VaultLockable is
         TransferHelper.safeTransfer(token, to, amount);
     }
 
+    /// @dev Transfer ETH out of the vault.
     /// @param to Address of the recipient
     /// @param amount Amount of ETH to transfer
     function transferETH(address to, uint256 amount) external payable override onlyOwner {

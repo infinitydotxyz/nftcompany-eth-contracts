@@ -12,6 +12,7 @@ import {ProxyFactory} from "./factory/ProxyFactory.sol";
 import {IVault} from "./interfaces/IVault.sol";
 
 /// @title NFTCompanyFactory
+/// @dev Contract that mints NFTs of various templates/extensions.
 contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -24,6 +25,11 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
 
     constructor() ERC721("NFT Company", "NFTC") {}
 
+    /**
+        @dev Adds a new template/extension so that NFTs of the type become mintable.
+        @param name Name of the template/extension
+        @param template Address of the template/extension
+    */
     function addTemplate(bytes32 name, address template) public onlyOwner {
         require(templates[name] == address(0), "Template already exists");
         templates[name] = template;
@@ -34,7 +40,7 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
     /* registry functions */
 
     function isInstance(address instance) external view override returns (bool validity) {
-        return ERC721._exists(uint160(instance));
+        return ERC721._exists(uint256(uint160(instance)));
     }
 
     function instanceCount() external view override returns (uint256 count) {
@@ -47,6 +53,11 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
 
     /* factory functions */
 
+    /**
+        @dev Mints a new NFT of the given template/extension.
+        @param name Name of the template/extension
+        @return vault Address of the new NFT contract
+    */
     function mint(bytes32 name) public returns (address vault) {
         require(templates[name] != address(0), "template not found");
         // create clone and initialize
@@ -54,6 +65,12 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
         _create(vault);
     }
 
+    /**
+        @dev Mints a new NFT of the given template/extension. Takes a salt for deterministic deployment.
+        @param name Name of the template/extension
+        @param salt Random salt
+        @return vault Address of the new NFT contract
+    */
     function mintWithSalt(bytes32 name, bytes32 salt) public returns (address vault) {
         require(templates[name] != address(0), "template not found");
         // create clone and initialize
