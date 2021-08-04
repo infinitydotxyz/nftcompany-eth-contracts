@@ -17,11 +17,11 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    bytes32[] public names;
-    mapping(bytes32=>address) public templates;
+    string[] public names;
+    mapping(string=>address) public templates;
     mapping(address=>EnumerableSet.AddressSet) private _ownerVaults;
     
-    event TemplateAdded(bytes32 indexed name, address indexed template);
+    event TemplateAdded(string indexed name, address indexed template);
 
     constructor() ERC721("NFT Company", "NFTC") {}
 
@@ -30,7 +30,7 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
         @param name Name of the template/extension
         @param template Address of the template/extension
     */
-    function addTemplate(bytes32 name, address template) public onlyOwner {
+    function addTemplate(string calldata name, address template) public onlyOwner {
         require(templates[name] == address(0), "Template already exists");
         templates[name] = template;
         names.push(name);
@@ -58,7 +58,7 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
         @param name Name of the template/extension
         @return vault Address of the new NFT contract
     */
-    function mint(bytes32 name) public returns (address vault) {
+    function mint(string calldata name) public returns (address vault) {
         require(templates[name] != address(0), "template not found");
         // create clone and initialize
         vault = ProxyFactory._create(templates[name], abi.encodeWithSelector(IVault.initialize.selector));
@@ -71,7 +71,7 @@ contract NFTCompanyFactory is Ownable, IInstanceRegistry, ERC721Enumerable {
         @param salt Random salt
         @return vault Address of the new NFT contract
     */
-    function mintWithSalt(bytes32 name, bytes32 salt) public returns (address vault) {
+    function mintWithSalt(string calldata name, bytes32 salt) public returns (address vault) {
         require(templates[name] != address(0), "template not found");
         // create clone and initialize
         vault = ProxyFactory._create2(templates[name], abi.encodeWithSelector(IVault.initialize.selector), salt);
